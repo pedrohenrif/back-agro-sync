@@ -1,8 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../../prisma/config/prisma.js";
 import bcrypt from "bcryptjs";
 import { generateToken } from "../utils/jwt.js";
-
-const prisma = new PrismaClient();
 
 export const registerUser = async (nome: string, email: string, senha: string) => {
   const hashedPassword = await bcrypt.hash(senha, 10);
@@ -13,26 +11,34 @@ export const registerUser = async (nome: string, email: string, senha: string) =
 
 export const loginUsuario = async (email: string, senha: string) => {
   try {
-    // Busca o usuário pelo e-mail
+    // Verifica se o e-mail existe no banco
     const usuario = await prisma.usuario.findUnique({ where: { email } });
 
     if (!usuario) {
       return { success: false, message: "E-mail ou senha inválidos." };
     }
 
-    // Compara a senha informada com a senha armazenada
-    const isMatch = await bcrypt.compare(senha, usuario.senha);
-
-    if (!isMatch) {
+    // Comparação direta da senha (sem hash)
+    if (senha !== usuario.senha) {
       return { success: false, message: "E-mail ou senha inválidos." };
     }
 
-    // Gera o token de autenticação
+    // Gera token JWT para autenticação
     const token = generateToken(usuario.nr_sequencia);
 
-    return { success: true, message: "Login realizado com sucesso!", data: { token } };
+    return { 
+      success: true, 
+      message: "Login realizado com sucesso!", 
+      data: { 
+        usuario: {
+          id: usuario.nr_sequencia,
+          email: usuario.email,
+        },
+        token 
+      } 
+    };
   } catch (error) {
-    console.error("Erro ao fazer login:", error);
+    console.error(`Erro ao autenticar usuário (${email}):`, error);
     return { success: false, message: "Erro interno. Tente novamente mais tarde." };
   }
 };

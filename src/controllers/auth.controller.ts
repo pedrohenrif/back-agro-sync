@@ -19,16 +19,21 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
-    const token = await loginUsuario(email, password);
-
-    if (!token) {
-      return res.status(401).json({ message: "Credenciais inválidas" });
+    const { email, senha } = req.body;
+    
+    if (!email || !senha) {
+      return res.status(400).json({ success: false, message: "E-mail e senha são obrigatórios." });
     }
 
-    return res.json({ token });
+    const resultado = await loginUsuario(email, senha);
+
+    if (!resultado.success) {
+      return res.status(401).json(resultado);
+    }
+
+    return res.status(200).json(resultado);
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Erro interno do servidor" });
+    console.error("Erro no login:", error);
+    return res.status(500).json({ success: false, message: "Erro interno do servidor." });
   }
 };
