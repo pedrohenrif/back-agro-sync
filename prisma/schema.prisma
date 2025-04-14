@@ -13,10 +13,65 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Usuario {
-  nr_sequencia       Int    @id @default(autoincrement())
-  nome     String
-  email    String @unique
-  senha String
-  dt_criacao DateTime @default(now())
+model User {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  password  String
+  createdAt DateTime  @default(now())
+  gardenUsers  GardenUser[]  
+  tasks        Task[]     
+  aiMessages   AIMessage[]  
 }
+
+model GardenUser {
+  id            Int       @id @default(autoincrement())
+  name          String
+  crop          String
+  plantingDate  DateTime
+  sizeInM2      Float
+  location      String?
+  isActive      Boolean   // Changed to Boolean
+  userId        Int
+  user          User      @relation(fields: [userId], references: [id])
+  careRecords   Care[]
+  harvests      Harvest[]
+}
+
+model Care {
+  id          Int      @id @default(autoincrement())
+  type        String   // Ex: irrigation, fertilization
+  description String
+  date        DateTime
+  gardenId    Int
+  garden      GardenUser   @relation(fields: [gardenId], references: [id])
+}
+
+model Task {
+  id          Int      @id @default(autoincrement())
+  title       String
+  priority    String   // Ex: High, Medium, Low
+  assignee    String   // Optional: could be User relation
+  isCompleted Boolean  @default(false)
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model AIMessage {
+  id        Int      @id @default(autoincrement())
+  question  String
+  answer    String
+  createdAt DateTime @default(now())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Harvest {
+  id          Int      @id @default(autoincrement())
+  harvestDate DateTime
+  yieldKg     Float
+  observations String?
+  gardenId    Int
+  garden      GardenUser   @relation(fields: [gardenId], references: [id])
+}
+
