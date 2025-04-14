@@ -34,3 +34,28 @@ console.log(req)
     res.status(500).json({ error: 'Erro ao criar a horta' });
   }
 };
+
+export const getGardens = async (req: Request, res: Response) => {
+    const { userId } = req.query;
+  
+    try {
+      if (!userId) {
+        return res.status(400).json({ error: "userId é obrigatório na query" });
+      }
+  
+      const gardens = await prisma.gardenUser.findMany({
+        where: {
+          userId: Number(userId),
+        },
+        include: {
+          user: true, // opcional
+        },
+      });
+  
+      res.json(gardens);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Erro ao buscar hortas" });
+    }
+  };
+  
