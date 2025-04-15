@@ -48,7 +48,7 @@ export const getGardens = async (req: Request, res: Response) => {
           userId: Number(userId),
         },
         include: {
-          user: true, // opcional
+          user: true,
         },
       });
   
@@ -59,3 +59,29 @@ export const getGardens = async (req: Request, res: Response) => {
     }
   };
   
+export const deleteGarden = async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    try {
+        const garden = await prisma.gardenUser.findUnique({
+        where: {
+            id: Number(id),
+        },
+        });
+
+        if (!garden) {
+        return res.status(404).json({ error: 'Horta não encontrada' });
+        }
+
+        await prisma.gardenUser.delete({
+        where: {
+            id: Number(id),
+        },
+        });
+
+        res.status(200).json({ message: 'Horta deletada com sucesso' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erro ao deletar a horta' });
+    }
+};
