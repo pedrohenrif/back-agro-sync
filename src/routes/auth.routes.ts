@@ -10,4 +10,4 @@ router.post('/login', (req, res) => {
     login(req, res);
 });
 
-export default  router
+export default router
