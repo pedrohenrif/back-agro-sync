@@ -22,6 +22,7 @@ model User {
   gardenUsers  GardenUser[]  
   tasks        Task[]     
   aiMessages   AIMessage[]  
+  supplies      Supply[] 
 }
 
 model GardenUser {
@@ -75,3 +76,29 @@ model Harvest {
   garden      GardenUser   @relation(fields: [gardenId], references: [id])
 }
 
+model SupplyUnit {
+  id       Int      @id @default(autoincrement())
+  name     String   @unique  // ex: "kg", "g", "un"
+  supplies Supply[]
+}
+
+model SupplyCategory {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  supplies Supply[]
+}
+
+model Supply {
+  id           Int             @id @default(autoincrement())
+  name         String
+  quantity     Float
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  categoryId   Int
+  category     SupplyCategory  @relation(fields: [categoryId], references: [id])
+  unitId       Int
+  unit         SupplyUnit      @relation(fields: [unitId], references: [id])
+  userId       Int
+  user         User            @relation(fields: [userId], references: [id])
+  isActive     Boolean         @default(true)
+}
