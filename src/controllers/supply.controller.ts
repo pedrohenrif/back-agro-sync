@@ -64,3 +64,15 @@ export const updateSupply = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Erro ao atualizar o insumo' });
   }
 };
+
+
+export const getCategories = async (req: Request, res: Response) => {
+  try{
+      const categories = await prisma.supplyCategory.findMany();
+
+      res.status(200).json(categories)
+  } catch (error){
+    console.error(error)
+    res.status(500).json({ error: 'Erro ao buscar a lista de categorias'})
+  } 
+}
