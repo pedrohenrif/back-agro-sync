@@ -7,7 +7,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use("/agroSync", router);
+app.use("/api", router);
 
 app.listen(3000, () => {
     console.log("Servidor rodando na porta 3000");
