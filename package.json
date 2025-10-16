@@ -28,6 +28,8 @@
   },
   "dependencies": {
     "@prisma/client": "^6.4.1",
+    "@sentry/node": "^10.20.0",
+    "@sentry/profiling-node": "^10.20.0",
     "@types/Node": "npm:@types/node@^22.13.5",
     "axios": "^1.8.4",
     "bcryptjs": "^3.0.2",
