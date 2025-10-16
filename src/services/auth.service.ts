@@ -2,37 +2,42 @@ import { prisma } from "../../prisma/config/prisma.js";
 import bcrypt from "bcryptjs";
 import { generateToken } from "../utils/jwt.js";
 
-export const registerUser = async (nome: string, email: string, senha: string) => {
-  const hashedPassword = await bcrypt.hash(senha, 10);
-  return prisma.usuario.create({
-    data: { nome, email, senha: hashedPassword },
+
+export const registerUser = async (name: string, email: string, password: string) => {
+  const hashedPassword = await bcrypt.hash(password, 10);
+  
+  return prisma.user.create({
+    data: {
+      name, 
+      email,
+      password: hashedPassword, 
+    },
   });
 };
 
-export const loginUsuario = async (email: string, senha: string) => {
+export const loginUser = async (email: string, password: string) => {
   try {
-    // Verifica se o e-mail existe no banco
-    const usuario = await prisma.usuario.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email } });
 
-    if (!usuario) {
+    if (!user) {
       return { success: false, message: "E-mail ou senha inválidos." };
     }
 
-    // Comparação direta da senha (sem hash)
-    if (senha !== usuario.senha) {
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
       return { success: false, message: "E-mail ou senha inválidos." };
     }
 
-    // Gera token JWT para autenticação
-    const token = generateToken(usuario.nr_sequencia);
+    const token = generateToken(user.id);
 
     return { 
       success: true, 
       message: "Login realizado com sucesso!", 
       data: { 
-        usuario: {
-          id: usuario.nr_sequencia,
-          email: usuario.email,
+        user: {
+          id: user.id,
+          email: user.email,
         },
         token 
       } 
