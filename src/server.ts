@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import * as Sentry from "@sentry/node";
 import { expressIntegration } from "@sentry/node";
 import { nodeProfilingIntegration } from "@sentry/profiling-node";
@@ -17,6 +20,8 @@ Sentry.init({
   tracesSampleRate: 1.0,
   profilesSampleRate: 1.0,
 });
+
+console.log("Sentry DSN lido pelo app:", process.env.SENTRY_DSN);
 
 app.use(cors());
 app.use(express.json());
