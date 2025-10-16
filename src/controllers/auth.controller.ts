@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { loginUsuario, registerUser } from "../services/auth.service.js";
+import { loginUser, registerUser } from "../services/auth.service.js";
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -25,7 +25,7 @@ export const login = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "E-mail e senha são obrigatórios." });
     }
 
-    const resultado = await loginUsuario(email, senha);
+    const resultado = await loginUser(email, senha);
 
     if (!resultado.success) {
       return res.status(401).json(resultado);
