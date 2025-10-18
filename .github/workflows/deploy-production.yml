@@ -1,0 +1,31 @@
+name: Deploy Backend Production
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to Production Server 
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+
+          script: |
+            # Carrega o NVM
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            
+            # Comandos de Produção
+            cd /var/www/agrosync/server                # <-- MUDANÇA (remove '_staging')
+            git pull origin main                     # <-- MUDANÇA (puxa do 'main')
+            npm install
+            npm run build
+            npx prisma migrate deploy
+            pm2 restart agrosync-api                 # <-- MUDANÇA (remove '-staging')
