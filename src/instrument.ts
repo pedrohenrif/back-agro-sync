@@ -7,4 +7,5 @@ dotenv.config();
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
+  debug: true,
 });
