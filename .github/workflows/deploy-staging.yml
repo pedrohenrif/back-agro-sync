@@ -1,0 +1,26 @@
+name: Deploy Backend Staging
+
+on:
+  push:
+    branches: [ develop ] 
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest 
+
+    steps:
+      - name: Deploy to Staging Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22 
+
+          script: |
+            cd /var/www/agrosync_staging/server
+            git pull origin develop
+            npm install
+            npm run build
+            npx prisma migrate deploy
+            pm2 restart agrosync-api-staging
