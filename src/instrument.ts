@@ -13,10 +13,7 @@ dotenv.config({ path: envPath });
 
 import * as Sentry from "@sentry/node";
 
-console.log("DEBUG [instrument.ts]: Porta lida:", process.env.PORT);
-console.log("DEBUG [instrument.ts]: DSN lida:", process.env.SENTRY_DSN);
-
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
-  debug: true,
+  debug: false,
 });

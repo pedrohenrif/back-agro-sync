@@ -13,8 +13,4 @@ router.use("/manager-garden", managerGarden);
 router.use("/dashboard", dashboard);
 router.use("/supply", supply)
 
-router.get("/debug-sentry", (req, res) => {
-  throw new Error("Erro de teste final para o Sentry com debug=true");
-});
-
 export default router;
