@@ -18,6 +18,10 @@ jobs:
           port: 22 
 
           script: |
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            
+            # 2. Agora o restante dos seus comandos vai funcionar
             cd /var/www/agrosync_staging/server
             git pull origin develop
             npm install
