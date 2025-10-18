@@ -1,12 +1,20 @@
-// src/instrument.ts
+// ARQUIVO: src/instrument.ts
 
 import dotenv from 'dotenv';
-dotenv.config();
+import path from 'path';
+import { fileURLToPath } from 'url'; 
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const envPath = path.resolve(__dirname, '../../.env');
+
+dotenv.config({ path: envPath });
 
 import * as Sentry from "@sentry/node";
 
-console.log("VERIFICAÇÃO DE DEBUG: Porta lida pelo .env:", process.env.PORT);
-console.log("VERIFICAÇÃO DE DEBUG: Sentry DSN lido pelo .env:", process.env.SENTRY_DSN);
+console.log("DEBUG [instrument.ts]: Porta lida:", process.env.PORT);
+console.log("DEBUG [instrument.ts]: DSN lida:", process.env.SENTRY_DSN);
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
