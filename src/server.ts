@@ -16,6 +16,8 @@ app.use("/api", router);
 
 Sentry.setupExpressErrorHandler(app);
 
-app.listen(3000, () => {
-  console.log("Servidor rodando na porta 3000, com Sentry (nova configuração) ativado!");
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Servidor rodando na porta ${PORT}, com Sentry ativado!`);
 });
