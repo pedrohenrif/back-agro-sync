@@ -2,9 +2,8 @@
 
 import * as Sentry from "@sentry/node";
 import dotenv from 'dotenv';
-import path from "path";
 
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config();
 
 console.log("VERIFICAÇÃO DE DEBUG: Sentry DSN lido pelo .env:", process.env.SENTRY_DSN);
 
