@@ -1,8 +1,10 @@
 import { Router } from 'express';
-import { createSupply, deleteSupply, updateSupply, getCategories } from '../controllers/supply.controller.js';
+import { createSupply, deleteSupply, updateSupply, getCategories, getSupplys } from '../controllers/supply.controller.js';
 
 const router = Router();
 
+
+router.get('/get-supplys', getSupplys);
 
 router.post('/add', createSupply);
 
