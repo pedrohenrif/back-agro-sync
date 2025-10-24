@@ -7,7 +7,7 @@ import supply from "./supply.routes.js"
 
 const router = Router();
 
-router.use("/login", login);
+router.use("/", login);
 router.use("/ask-ai", aiRoutes);
 router.use("/manager-garden", managerGarden);
 router.use("/dashboard", dashboard);
