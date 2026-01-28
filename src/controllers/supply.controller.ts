@@ -1,56 +1,80 @@
-import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+// ARQUIVO: src/controllers/supply.controller.ts
 
-const prisma = new PrismaClient();
+import { Request, Response } from 'express';
+import { prisma } from "../../prisma/config/prisma.js"; 
 
 const supplyInclude = {
   category: true, 
   unit: true,    
 };
 
-export const getSupplys = async (req: Request, res: Response) => {
+export const getSupplies = async (req: Request, res: Response) => {
+  const organizationId = req.user!.organizationId;
+
   try {
-    const supplys = await prisma.supply.findMany({
+    const supplies = await prisma.supply.findMany({
       where: {
+        organizationId: organizationId,
         isActive: true, 
       },
       include: supplyInclude,
+      orderBy: { name: 'asc' }
     });
 
-    res.status(200).json(supplys);
+    res.status(200).json(supplies);
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: 'Erro ao buscar lista de Insumos' });
   }
 };
 
 export const createSupply = async (req: Request, res: Response) => {
-  const { name, quantity, unitId, userId, categoryId, isActive = true } = req.body;
+  const organizationId = req.user!.organizationId;
+  const { 
+    name, brand, supplierLot, invoiceNumber, 
+    quantity, minStock, unitPrice, withdrawalDays,
+    unitId, categoryId 
+  } = req.body;
+
+  if (!name || quantity === undefined || !unitId || !categoryId) {
+    return res.status(400).json({ message: "Nome, quantidade, unidade e categoria são obrigatórios." });
+  }
 
   try {
     const newSupply = await prisma.supply.create({
       data: {
         name,
+        brand,
+        supplierLot,
+        invoiceNumber,
         quantity: Number(quantity),
-        unitId,
-        userId,
-        categoryId,
-        isActive,
+        minStock: Number(minStock || 0),
+        unitPrice: unitPrice ? Number(unitPrice) : null,
+        withdrawalDays: withdrawalDays ? Number(withdrawalDays) : 0,
+        organizationId, // Simplificado
+        categoryId: Number(categoryId),
+        unitId: Number(unitId)
       },
       include: supplyInclude, 
     });
 
     res.status(201).json(newSupply);
   } catch (error) {
-    console.error(error);
+    console.error("Erro ao criar insumo:", error);
     res.status(500).json({ error: 'Erro ao criar o insumo' });
   }
 };
 
 export const deleteSupply = async (req: Request, res: Response) => {
+  const organizationId = req.user!.organizationId;
   const { id } = req.params;
 
   try {
+    const check = await prisma.supply.findFirst({
+      where: { id: Number(id), organizationId }
+    });
+
+    if (!check) return res.status(404).json({ error: "Insumo não encontrado." });
+
     const updatedSupply = await prisma.supply.update({
       where: { id: Number(id) },
       data: { isActive: false },
@@ -59,53 +83,58 @@ export const deleteSupply = async (req: Request, res: Response) => {
 
     res.status(200).json(updatedSupply);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Erro ao deletar o insumo' });
+    res.status(500).json({ error: 'Erro ao desativar o insumo' });
   }
 };
 
 export const updateSupply = async (req: Request, res: Response) => {
+  const organizationId = req.user!.organizationId;
   const { id } = req.params;
-  const { name, quantity, unitId, categoryId } = req.body;
+  const data = req.body;
 
   try {
+    const check = await prisma.supply.findFirst({
+      where: { id: Number(id), organizationId }
+    });
+
+    if (!check) return res.status(404).json({ error: "Insumo não encontrado." });
+
     const updatedSupply = await prisma.supply.update({
       where: { id: Number(id) },
       data: {
-        name,
-        quantity: Number(quantity),
-        unitId,
-        categoryId,
+        ...data,
+        quantity: data.quantity !== undefined ? Number(data.quantity) : undefined,
+        minStock: data.minStock !== undefined ? Number(data.minStock) : undefined,
+        categoryId: data.categoryId ? Number(data.categoryId) : undefined,
+        unitId: data.unitId ? Number(data.unitId) : undefined,
       },
       include: supplyInclude, 
     });
 
     res.status(200).json(updatedSupply);
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: 'Erro ao atualizar o insumo' });
   }
 };
 
 export const getCategories = async (req: Request, res: Response) => {
   try {
-    const categories = await prisma.supplyCategory.findMany();
-
+    const categories = await prisma.supplyCategory.findMany({
+      orderBy: { name: 'asc' }
+    });
     res.status(200).json(categories);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Erro ao buscar a lista de categorias' });
+    res.status(500).json({ error: 'Erro ao buscar categorias' });
   }
 };
 
-
 export const getUnits = async (req: Request, res: Response) => {
   try {
-    const units = await prisma.supplyUnit.findMany();
-
+    const units = await prisma.supplyUnit.findMany({
+      orderBy: { name: 'asc' }
+    });
     res.status(200).json(units);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Erro ao buscar a lista de unidades' });
+    res.status(500).json({ error: 'Erro ao buscar unidades' });
   }
 };

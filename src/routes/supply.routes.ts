@@ -1,17 +1,24 @@
+// ARQUIVO: src/routes/supply.routes.ts
+
 import { Router } from 'express';
-import { createSupply, deleteSupply, updateSupply, getCategories, getSupplys } from '../controllers/supply.controller.js';
+import { 
+  createSupply, 
+  deleteSupply, 
+  updateSupply, 
+  getCategories, 
+  getSupplies,
+  getUnits 
+} from '../controllers/supply.controller.js';
 
 const router = Router();
 
+router.get('/', getSupplies);
+router.post('/', createSupply);
 
-router.get('/get-supplys', getSupplys);
+router.put('/:id', updateSupply);
+router.delete('/:id', deleteSupply); 
 
-router.post('/add', createSupply);
-
-router.put('/delete/:id', deleteSupply);
-
-router.put('/update/:id', updateSupply);
-
-router.get('/get-categories', getCategories);
+router.get('/categories', getCategories);
+router.get('/units', getUnits);
 
 export default router;

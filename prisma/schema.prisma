@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,49 +7,239 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Organization {
+  id               Int              @id @default(autoincrement())
+  name             String
+  members          Membership[]
+  gardens          Garden[]
+  supplies         Supply[]
+  tasks            Task[]
+  cropPlans        CropPlan[]
+  supplyCategories SupplyCategory[]
+  supplyUnits      SupplyUnit[]
+  supplyUsages     SupplyUsage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model User {
-  id        Int       @id @default(autoincrement())
-  name      String
-  email     String    @unique
-  password  String
-  createdAt DateTime  @default(now())
-  gardenUsers  GardenUser[]  
-  tasks        Task[]     
-  aiMessages   AIMessage[]  
-  supplies      Supply[] 
+  id             Int            @id @default(autoincrement())
+  name           String
+  email          String         @unique
+  password       String
+  memberships    Membership[]
+  tasks          Task[]
+  aiMessages     AIMessage[]
+  journalEntries JournalEntry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-model GardenUser {
-  id            Int       @id @default(autoincrement())
-  name          String
-  crop          String
-  plantingDate  DateTime
-  sizeInM2      Float
-  location      String?
-  isActive      Boolean   // Changed to Boolean
-  userId        Int
-  user          User      @relation(fields: [userId], references: [id])
-  careRecords   Care[]
-  harvests      Harvest[]
+enum Role {
+  ADMIN
+  MEMBER
 }
 
-model Care {
+model Membership {
+  id             Int          @id @default(autoincrement())
+  role           Role         @default(MEMBER)
+  userId         Int
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@unique([userId, organizationId])
+}
+
+model Garden {
+  id           Int      @id @default(autoincrement())
+  name         String
+  lotCode      String   @unique
+  crop         String
+  plantingDate DateTime
+  sizeInM2     Float
+  isActive     Boolean  @default(true)
+
+  location String?
+  geometry Json?
+  mapColor String? @default("#2e7d32")
+
+  cropPlanId     Int?
+  cropPlan       CropPlan?    @relation(fields: [cropPlanId], references: [id])
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  journalEntries JournalEntry[]
+  harvests       Harvest[]
+  tasks          Task[]
+  supplyUsages   SupplyUsage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model JournalEntry {
   id          Int      @id @default(autoincrement())
-  type        String   // Ex: irrigation, fertilization
+  title       String
+  type        String
   description String
   date        DateTime
-  gardenId    Int
-  garden      GardenUser   @relation(fields: [gardenId], references: [id])
+  imageUrl    String?
+
+  gardenId Int
+  garden   Garden @relation(fields: [gardenId], references: [id], onDelete: Cascade)
+  userId   Int
+  user     User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model Harvest {
+  id           Int      @id @default(autoincrement())
+  harvestDate  DateTime
+  yieldKg      Float
+  notes        String?
+
+  gardenId Int
+  garden   Garden @relation(fields: [gardenId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
 }
 
 model Task {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   title       String
-  priority    String   // Ex: High, Medium, Low
-  assignee    String   // Optional: could be User relation
-  isCompleted Boolean  @default(false)
-  userId      Int
-  user        User     @relation(fields: [userId], references: [id])
+  description String?
+  priority    String
+  status      String    @default("PENDING")
+  dueDate     DateTime?
+
+  gardenId Int?
+  garden   Garden? @relation(fields: [gardenId], references: [id], onDelete: Cascade)
+
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  assignedToId Int?
+  assignedTo   User? @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Supply {
+  id            Int     @id @default(autoincrement())
+  name          String
+  brand         String?
+  supplierLot   String?
+  invoiceNumber String?
+  quantity      Float
+  minStock      Float   @default(0)
+  isActive      Boolean @default(true)
+
+  unitPrice      Float?
+  withdrawalDays Int?   @default(0)
+
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  categoryId Int
+  category   SupplyCategory @relation(fields: [categoryId], references: [id])
+  unitId     Int
+  unit       SupplyUnit     @relation(fields: [unitId], references: [id])
+
+  usages    SupplyUsage[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model SupplyUsage {
+  id           Int      @id @default(autoincrement())
+  quantityUsed Float
+  usedAt       DateTime @default(now())
+  notes        String?
+
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  gardenId Int
+  garden   Garden @relation(fields: [gardenId], references: [id], onDelete: Cascade)
+
+  supplyId Int
+  supply   Supply @relation(fields: [supplyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model SupplyUnit {
+  id             Int           @id @default(autoincrement())
+  name           String
+  symbol         String
+  organizationId Int?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  supplies       Supply[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model SupplyCategory {
+  id             Int           @id @default(autoincrement())
+  name           String
+  description    String?
+  organizationId Int?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  supplies       Supply[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model CropPlan {
+  id           Int    @id @default(autoincrement())
+  name         String
+  culture      String
+  durationDays Int
+
+  bestMonths Int[]
+
+  spacingX        Float?
+  spacingY        Float?
+  germinationRate Float? @default(0.95)
+  safetyMargin    Float? @default(0.10)
+
+  expectedWeightPerUnit Float?
+  commercialEfficiency  Float? @default(0.85)
+  targetMarketPrice     Float?
+
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  gardens      Garden[]
+  planSupplies PlanSupply[]
+  planTasks    PlanTask[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PlanSupply {
+  id         Int      @id @default(autoincrement())
+  name       String
+  quantity   Float // Qtd recomendada por m²
+  unit       String
+  cropPlanId Int
+  cropPlan   CropPlan @relation(fields: [cropPlanId], references: [id], onDelete: Cascade)
+}
+
+model PlanTask {
+  id           Int      @id @default(autoincrement())
+  title        String // Ex: "Primeira Adubação de Cobertura"
+  dayToExecute Int // Ex: Dia 15 após o plantio
+  instructions String?
+  cropPlanId   Int
+  cropPlan     CropPlan @relation(fields: [cropPlanId], references: [id], onDelete: Cascade)
 }
 
 model AIMessage {
@@ -64,41 +248,5 @@ model AIMessage {
   answer    String
   createdAt DateTime @default(now())
   userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-}
-
-model Harvest {
-  id          Int      @id @default(autoincrement())
-  harvestDate DateTime
-  yieldKg     Float
-  observations String?
-  gardenId    Int
-  garden      GardenUser   @relation(fields: [gardenId], references: [id])
-}
-
-model SupplyUnit {
-  id       Int      @id @default(autoincrement())
-  name     String   @unique  // ex: "kg", "g", "un"
-  supplies Supply[]
-}
-
-model SupplyCategory {
-  id       Int       @id @default(autoincrement())
-  name     String    @unique
-  supplies Supply[]
-}
-
-model Supply {
-  id           Int             @id @default(autoincrement())
-  name         String
-  quantity     Float
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-  categoryId   Int
-  category     SupplyCategory  @relation(fields: [categoryId], references: [id])
-  unitId       Int
-  unit         SupplyUnit      @relation(fields: [unitId], references: [id])
-  userId       Int
-  user         User            @relation(fields: [userId], references: [id])
-  isActive     Boolean         @default(true)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

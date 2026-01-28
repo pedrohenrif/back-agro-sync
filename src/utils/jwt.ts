@@ -1,11 +1,27 @@
+// ARQUIVO: src/utils/jwt.ts
 import jwt from "jsonwebtoken";
 
-const SECRET = process.env.JWT_SECRET || "secret";
+const SECRET_KEY = process.env.JWT_SECRET || "SEGREDO_SUPER_SECRETO_PARA_TESTES";
 
-export const generateToken = (id: number) => {
-  return jwt.sign({ id }, SECRET, { expiresIn: "1h" });
+export interface TokenPayload {
+  userId: number;
+  organizationId: number;
+  role: string;
+}
+
+export const generateToken = (payload: TokenPayload): string => {
+  return jwt.sign(payload, SECRET_KEY, { expiresIn: "1d" }); 
 };
 
-export const verifyToken = (token: string) => {
-  return jwt.verify(token, SECRET);
+export const verifyToken = (token: string): TokenPayload | null => {
+  try {
+    const decoded = jwt.verify(token, SECRET_KEY) as (jwt.JwtPayload & TokenPayload);
+    return {
+      userId: decoded.userId,
+      organizationId: decoded.organizationId,
+      role: decoded.role
+    };
+  } catch (error) {
+    return null;
+  }
 };
