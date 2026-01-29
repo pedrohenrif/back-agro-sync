@@ -117,24 +117,163 @@ export const updateSupply = async (req: Request, res: Response) => {
   }
 };
 
-export const getCategories = async (req: Request, res: Response) => {
+export const getCategories = async (req: any, res: Response) => {
   try {
+    const orgId = Number(req.user.organizationId); 
+
     const categories = await prisma.supplyCategory.findMany({
+      where: {
+        organizationId: orgId 
+      },
       orderBy: { name: 'asc' }
     });
-    res.status(200).json(categories);
+
+    res.json(categories);
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao buscar categorias' });
+    res.status(500).json({ message: "Erro ao buscar categorias" });
   }
 };
 
-export const getUnits = async (req: Request, res: Response) => {
+export const createCategory = async (req: any, res: Response) => {
+  const { name, description } = req.body;
+  const orgId = Number(req.user.organizationId);
+
   try {
-    const units = await prisma.supplyUnit.findMany({
-      orderBy: { name: 'asc' }
+    const category = await prisma.supplyCategory.create({
+      data: {
+        name,
+        description,
+        organizationId: orgId
+      }
     });
-    res.status(200).json(units);
+    res.status(201).json(category);
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao buscar unidades' });
+    res.status(400).json({ message: "Erro ao criar categoria" });
+  }
+};
+
+export const deleteCategory = async (req: any, res: Response) => {
+  const { id } = req.params;
+  const orgId = Number(req.user.organizationId);
+
+  try {
+    await prisma.supplyCategory.deleteMany({
+      where: {
+        id: Number(id),
+        organizationId: orgId
+      }
+    });
+    res.status(204).send();
+  } catch (error) {
+    res.status(400).json({ message: "Erro ao deletar categoria" });
+  }
+};
+
+export const updateCategory = async (req: any, res: Response) => {
+  const { id } = req.params;
+  const { name, description } = req.body;
+  const orgId = Number(req.user.organizationId);
+
+  try {
+    const updated = await prisma.supplyCategory.updateMany({
+      where: {
+        id: Number(id),
+        organizationId: orgId // Trava de segurança
+      },
+      data: {
+        name,
+        description
+      }
+    });
+
+    if (updated.count === 0) {
+      return res.status(404).json({ message: "Categoria não encontrada ou sem permissão." });
+    }
+
+    res.json({ message: "Categoria atualizada com sucesso!" });
+  } catch (error) {
+    res.status(400).json({ message: "Erro ao atualizar categoria" });
+  }
+};
+
+export const getUnits = async (req: any, res: Response) => {
+  try {
+    const orgId = Number(req.user.organizationId);
+
+    const units = await prisma.supplyUnit.findMany({
+      where: {
+        organizationId: orgId 
+      },
+      orderBy: {
+        name: 'asc' 
+      }
+    });
+
+    res.json(units);
+  } catch (error) {
+    console.error("Erro ao buscar unidades:", error);
+    res.status(500).json({ message: "Erro ao buscar unidades de medida." });
+  }
+};
+
+export const createUnit = async (req: any, res: Response) => {
+  const { name, symbol } = req.body;
+  const orgId = Number(req.user.organizationId);
+
+  try {
+    const newUnit = await prisma.supplyUnit.create({
+      data: {
+        name,
+        symbol,
+        organizationId: orgId
+      }
+    });
+    res.status(201).json(newUnit);
+  } catch (error) {
+    res.status(400).json({ message: "Erro ao criar unidade" });
+  }
+};
+
+export const deleteUnit = async (req: any, res: Response) => {
+  const { id } = req.params;
+  const orgId = Number(req.user.organizationId);
+
+  try {
+    await prisma.supplyUnit.deleteMany({
+      where: {
+        id: Number(id),
+        organizationId: orgId
+      }
+    });
+    res.status(204).send();
+  } catch (error) {
+    res.status(400).json({ message: "Erro ao deletar unidade" });
+  }
+};
+
+export const updateUnit = async (req: any, res: Response) => {
+  const { id } = req.params;
+  const { name, symbol } = req.body;
+  const orgId = Number(req.user.organizationId);
+
+  try {
+    const updated = await prisma.supplyUnit.updateMany({
+      where: {
+        id: Number(id),
+        organizationId: orgId // Trava de segurança
+      },
+      data: {
+        name,
+        symbol
+      }
+    });
+
+    if (updated.count === 0) {
+      return res.status(404).json({ message: "Unidade não encontrada ou sem permissão." });
+    }
+
+    res.json({ message: "Unidade atualizada com sucesso!" });
+  } catch (error) {
+    res.status(400).json({ message: "Erro ao atualizar unidade" });
   }
 };

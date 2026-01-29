@@ -1,17 +1,14 @@
 import { Router } from "express";
-import { login, register } from "../controllers/auth.controller.js";
+import { login, register, getMe } from "../controllers/auth.controller.js";
+import { authMiddleware } from '../middleware/auth.middleware.js';
 import dotenv from "dotenv";
 
 dotenv.config();
 
 const router = Router();
 
-router.post('/login', (req, res) => {
-    login(req, res);
-});
-
-router.post('/register', (req, res) => {
-    register(req, res);
-});
+router.post("/register", register);
+router.post("/login", login);
+router.get("/me", authMiddleware, getMe);
 
 export default router

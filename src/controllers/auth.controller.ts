@@ -1,8 +1,9 @@
-// ARQUIVO: src/controllers/auth.controller.ts (Corrigido)
+// ARQUIVO: src/controllers/auth.controller.ts 
 
 import { Request, Response } from "express";
 import { registerUserService, loginUserService } from "../services/auth.service.js";
 import { generateToken } from "../utils/jwt.js";
+import { prisma } from "../../prisma/config/prisma.js";
 
 
 export const register = async (req: Request, res: Response) => {
@@ -20,7 +21,6 @@ export const register = async (req: Request, res: Response) => {
 
   res.status(201).json({ message: "Conta criada com sucesso!", data: result.data });
 };
-
 
 export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body; 
@@ -55,4 +55,33 @@ export const login = async (req: Request, res: Response) => {
       token,
     },
   });
+};
+
+export const getMe = async (req: any, res: Response) => {
+  try {
+    const userId = Number(req.user?.userId);
+    const orgId = Number(req.user?.organizationId);
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    const organization = await prisma.organization.findUnique({
+      where: { id: orgId }
+    });
+
+    if (!user || !organization) {
+      return res.status(404).json({ message: "Dados não encontrados." });
+    }
+
+    const { password, ...userWithoutPassword } = user;
+
+    return res.json({
+      user: userWithoutPassword,
+      organization: organization
+    });
+
+  } catch (error) {
+    return res.status(500).json({ message: "Erro interno no servidor." });
+  }
 };
