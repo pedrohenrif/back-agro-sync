@@ -157,6 +157,8 @@ model Supply {
   unitId     Int
   unit       SupplyUnit     @relation(fields: [unitId], references: [id])
 
+  planSupplies PlanSupply[]
+
   usages    SupplyUsage[]
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
@@ -207,6 +209,7 @@ model CropPlan {
   name         String
   culture      String
   durationDays Int
+  description  String?
 
   bestMonths Int[]
 
@@ -233,10 +236,13 @@ model CropPlan {
 model PlanSupply {
   id         Int      @id @default(autoincrement())
   name       String
-  quantity   Float // Qtd recomendada por m²
+  quantity   Float
   unit       String
   cropPlanId Int
   cropPlan   CropPlan @relation(fields: [cropPlanId], references: [id], onDelete: Cascade)
+
+  supplyId  Int?     
+  supply    Supply?  @relation(fields: [supplyId], references: [id])
 }
 
 model PlanTask {
