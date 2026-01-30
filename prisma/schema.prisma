@@ -19,6 +19,8 @@ model Organization {
   supplyUnits      SupplyUnit[]
   supplyUsages     SupplyUsage[]
 
+  supplyTransactions SupplyTransaction[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -32,6 +34,8 @@ model User {
   tasks          Task[]
   aiMessages     AIMessage[]
   journalEntries JournalEntry[]
+
+  supplyTransactions SupplyTransaction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -146,6 +150,8 @@ model Supply {
   organizationId Int
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
+  transactions SupplyTransaction[]
+
   categoryId Int
   category   SupplyCategory @relation(fields: [categoryId], references: [id])
   unitId     Int
@@ -249,4 +255,27 @@ model AIMessage {
   createdAt DateTime @default(now())
   userId    Int
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum TransactionType {
+  ENTRY 
+  EXIT 
+}
+
+model SupplyTransaction {
+  id             Int             @id @default(autoincrement())
+  supplyId       Int
+  supply         Supply          @relation(fields: [supplyId], references: [id], onDelete: Cascade)
+  
+  type           TransactionType
+  quantity       Float       
+  reason         String?       
+  
+  createdAt      DateTime        @default(now())
+
+  organizationId Int
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  userId         Int         
+  user           User            @relation(fields: [userId], references: [id])
 }

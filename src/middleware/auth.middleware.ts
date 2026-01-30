@@ -18,7 +18,6 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
     res.status(401).json({ message: "Acesso negado. Nenhum token fornecido." });
     return; 
   }
-  
 
   const token = authHeader.split(" ")[1];
   const payload = verifyToken(token);
@@ -27,8 +26,6 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
     res.status(401).json({ message: "Acesso negado. Token inválido ou expirado." });
     return; 
   }
-
   req.user = payload;
-  
   next();
 };

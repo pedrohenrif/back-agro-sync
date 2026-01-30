@@ -13,7 +13,8 @@ import {
   deleteCategory,
   createCategory,
   updateCategory,
-  updateUnit
+  updateUnit,
+  getSupplyTransactions
 } from '../controllers/supply.controller.js';
 
 const router = Router();
@@ -30,10 +31,13 @@ router.get("/categories", getCategories);
 router.post("/categories", createCategory);
 router.delete("/categories/:id", deleteCategory);
 router.put("/categories/:id", updateCategory);
+
 // Rotas de Unidades
 router.get("/units", getUnits);
 router.post("/units", createUnit);
 router.delete("/units/:id", deleteUnit);
 router.put("/units/:id", updateUnit);
+
+router.get("/:id/transactions", getSupplyTransactions);
 
 export default router;

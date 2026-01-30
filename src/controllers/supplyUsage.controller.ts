@@ -5,6 +5,7 @@ import { prisma } from "../../prisma/config/prisma.js";
 export const applySupplyToGarden = async (req: Request, res: Response) => {
   const { gardenId, supplyId, quantityApplied, notes } = req.body;
   const organizationId = req.user!.organizationId;
+  const userId = req.user!.userId; 
 
   if (!gardenId || !supplyId || !quantityApplied) {
     return res.status(400).json({ error: "Dados incompletos para aplicação." });
@@ -22,7 +23,7 @@ export const applySupplyToGarden = async (req: Request, res: Response) => {
       }
 
       if (supply.quantity < Number(quantityApplied)) {
-        throw new Error(`Estoque insuficiente. Disponível: ${supply.quantity} ${supply.unitId}`);
+        throw new Error(`Estoque insuficiente. Disponível: ${supply.quantity}`);
       }
 
       const usage = await tx.supplyUsage.create({
@@ -35,9 +36,18 @@ export const applySupplyToGarden = async (req: Request, res: Response) => {
           organizationId
         },
         include: {
-          supply: {
-            select: { name: true }
-          }
+          supply: { select: { name: true } }
+        }
+      });
+
+      await tx.supplyTransaction.create({
+        data: {
+          type: 'EXIT',
+          quantity: Number(quantityApplied),
+          reason: notes || `Aplicação no canteiro #${gardenId}`,
+          supply: { connect: { id: Number(supplyId) } },
+          organization: { connect: { id: Number(organizationId) } },
+          user: { connect: { id: Number(userId) } }
         }
       });
 
