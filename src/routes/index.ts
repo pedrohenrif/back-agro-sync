@@ -3,7 +3,6 @@
 import { Router } from "express";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 
-// Importação das suas rotas
 import authRoutes from "./auth.routes.js";
 import aiRoutes from "./ai.routes.js";
 import gardenRoutes from "./garden.routes.js"; 
@@ -14,6 +13,7 @@ import tasksRoutes from "./task.routes.js";
 import cropPlanRoutes from './cropPlan.routes.js';
 import supplyUsageRoutes from './supplyUsage.routes.js';
 import harvestRoutes from './harvest.routes.js'; 
+import cropCycleRoutes from './cropCycle.routes.js';
 
 const router = Router();
 
@@ -29,5 +29,6 @@ router.use("/search", searchRoutes);
 router.use('/crop-plans', cropPlanRoutes);
 router.use('/usage', supplyUsageRoutes);
 router.use('/harvest', harvestRoutes);
+router.use('/crop-cycles', cropCycleRoutes); 
 
 export default router;

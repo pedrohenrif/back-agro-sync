@@ -148,3 +148,53 @@ export const deleteTask = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Erro ao excluir a tarefa.' });
   }
 };
+
+export const getTodayTasks = async (req: Request, res: Response) => {
+  const organizationId = req.user!.organizationId;
+  
+  // Criamos o intervalo de "hoje" (das 00:00 às 23:59)
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+
+  try {
+    const tasks = await prisma.task.findMany({
+      where: {
+        organizationId: Number(organizationId),
+        dueDate: {
+          gte: start,
+          lte: end
+        }
+      },
+      include: {
+        garden: true // Para sabermos de que canteiro é a tarefa
+      },
+      orderBy: {
+        priority: 'desc'
+      }
+    });
+    res.json(tasks);
+  } catch (error) {
+    res.status(500).json({ error: "Erro ao procurar tarefas de hoje." });
+  }
+};
+
+export const toggleTaskStatus = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { status } = req.body; 
+
+  try {
+    const task = await prisma.task.update({
+      where: { id: Number(id) },
+      data: { 
+        status,
+        completedAt: status === 'COMPLETED' ? new Date() : null
+      }
+    });
+    res.json(task);
+  } catch (error) {
+    res.status(500).json({ error: "Erro ao atualizar tarefa." });
+  }
+};

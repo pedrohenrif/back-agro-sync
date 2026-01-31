@@ -63,7 +63,7 @@ model Garden {
   name         String
   lotCode      String   @unique
   crop         String
-  plantingDate DateTime
+  plantingDate DateTime?
   sizeInM2     Float
   isActive     Boolean  @default(true)
 
@@ -80,6 +80,8 @@ model Garden {
   harvests       Harvest[]
   tasks          Task[]
   supplyUsages   SupplyUsage[]
+
+  cropCycles CropCycle[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -102,10 +104,10 @@ model JournalEntry {
 }
 
 model Harvest {
-  id           Int      @id @default(autoincrement())
-  harvestDate  DateTime
-  yieldKg      Float
-  notes        String?
+  id          Int      @id @default(autoincrement())
+  harvestDate DateTime
+  yieldKg     Float
+  notes       String?
 
   gardenId Int
   garden   Garden @relation(fields: [gardenId], references: [id], onDelete: Cascade)
@@ -205,7 +207,7 @@ model SupplyCategory {
 }
 
 model CropPlan {
-  id           Int    @id @default(autoincrement())
+  id           Int     @id @default(autoincrement())
   name         String
   culture      String
   durationDays Int
@@ -221,6 +223,8 @@ model CropPlan {
   expectedWeightPerUnit Float?
   commercialEfficiency  Float? @default(0.85)
   targetMarketPrice     Float?
+
+  cropCycles CropCycle[]
 
   organizationId Int
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -241,8 +245,8 @@ model PlanSupply {
   cropPlanId Int
   cropPlan   CropPlan @relation(fields: [cropPlanId], references: [id], onDelete: Cascade)
 
-  supplyId  Int?     
-  supply    Supply?  @relation(fields: [supplyId], references: [id])
+  supplyId Int?
+  supply   Supply? @relation(fields: [supplyId], references: [id])
 }
 
 model PlanTask {
@@ -264,24 +268,52 @@ model AIMessage {
 }
 
 enum TransactionType {
-  ENTRY 
-  EXIT 
+  ENTRY
+  EXIT
 }
 
 model SupplyTransaction {
-  id             Int             @id @default(autoincrement())
-  supplyId       Int
-  supply         Supply          @relation(fields: [supplyId], references: [id], onDelete: Cascade)
-  
-  type           TransactionType
-  quantity       Float       
-  reason         String?       
-  
-  createdAt      DateTime        @default(now())
+  id       Int    @id @default(autoincrement())
+  supplyId Int
+  supply   Supply @relation(fields: [supplyId], references: [id], onDelete: Cascade)
+
+  type     TransactionType
+  quantity Float
+  reason   String?
+
+  createdAt DateTime @default(now())
 
   organizationId Int
-  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  userId         Int         
-  user           User            @relation(fields: [userId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+}
+
+model CropCycle {
+  id                  Int      @id @default(autoincrement())
+  gardenId            Int
+  cropPlanId          Int
+  startDate           DateTime @default(now())
+  expectedHarvestDate DateTime
+  status              String   @default("ACTIVE")
+
+  garden   Garden   @relation(fields: [gardenId], references: [id])
+  cropPlan CropPlan @relation(fields: [cropPlanId], references: [id])
+
+  tasks GardenTask[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model GardenTask {
+  id          Int       @id @default(autoincrement())
+  cropCycleId Int
+  title       String
+  dueDate     DateTime
+  isCompleted Boolean   @default(false)
+  completedAt DateTime?
+
+  cropCycle CropCycle @relation(fields: [cropCycleId], references: [id], onDelete: Cascade)
 }

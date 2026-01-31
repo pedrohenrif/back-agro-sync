@@ -5,7 +5,9 @@ import {
   updateTaskStatus, 
   deleteTask,
   getTasksByGarden,
-  updateTask
+  updateTask,
+  getTodayTasks,
+  toggleTaskStatus
 } from "../controllers/task.controller.js";
 
 const router = Router();
@@ -16,5 +18,7 @@ router.patch("/:id/status", updateTaskStatus);
 router.delete("/:id", deleteTask);
 router.get('/garden/:gardenId', getTasksByGarden);
 router.put('/:id', updateTask);
+router.get('/today', getTodayTasks);
+router.patch('/:id/status', toggleTaskStatus);
 
 export default router;

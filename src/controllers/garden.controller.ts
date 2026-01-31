@@ -25,46 +25,59 @@ export const createGarden = async (req: Request, res: Response) => {
   const { name, crop, plantingDate, sizeInM2, cropPlanId, location } = req.body;
 
   try {
-    // 1. Iniciamos uma transação para garantir consistência
     const result = await prisma.$transaction(async (tx) => {
       
-      // A. Gerar o Código de Lote (Rastreabilidade)
+      // 1. Tratamento da Sigla e Código de Lote
+      const cropName = crop || "Vazio";
+      const sigla = cropName.length >= 3 ? cropName.substring(0, 3).toUpperCase() : "VAZ";
       const year = new Date().getFullYear();
-      const sigla = crop.substring(0, 3).toUpperCase();
       const random = Math.random().toString(36).substring(7).toUpperCase();
       const generatedLotCode = `${sigla}-${year}-${random}`;
 
+      // 2. Tratamento da Data (Para aceitar canteiro vazio)
+      const parsedPlantingDate = plantingDate ? new Date(plantingDate) : undefined;
+
+      // 3. Criação do Canteiro
       const newGarden = await tx.garden.create({
         data: {
           name,
           lotCode: generatedLotCode,
-          crop,
-          plantingDate: new Date(plantingDate),
-          sizeInM2: parseFloat(sizeInM2),
-          location,
-          cropPlanId: cropPlanId ? Number(cropPlanId) : null,
-          organizationId
+          crop: cropName,
+          plantingDate: parsedPlantingDate,
+          sizeInM2: parseFloat(sizeInM2) || 0,
+          location: location || "",
+          
+          // CORREÇÃO AQUI: Em vez de cropPlanId, usamos o objeto de relação cropPlan
+          // Se houver ID, conectamos. Se não, deixamos undefined (não preenche).
+          cropPlan: cropPlanId ? {
+            connect: { id: Number(cropPlanId) }
+          } : undefined,
+
+          organization: {
+            connect: { id: Number(organizationId) }
+          }
         }
       });
 
-      if (cropPlanId) {
+      // 4. Geração Automática de Tarefas (Se houver plano e data)
+      if (cropPlanId && parsedPlantingDate) {
         const planTasks = await tx.planTask.findMany({
           where: { cropPlanId: Number(cropPlanId) }
         });
 
         if (planTasks.length > 0) {
           const tasksToCreate = planTasks.map(pt => {
-            const dueDate = new Date(plantingDate);
+            const dueDate = new Date(parsedPlantingDate);
             dueDate.setDate(dueDate.getDate() + pt.dayToExecute); 
 
             return {
               title: `${pt.title} (${newGarden.name})`,
-              description: pt.instructions || `Tarefa automática do plano ${crop}`,
+              description: pt.instructions || `Tarefa automática para ${cropName}`,
               status: 'PENDING',
               priority: 'MEDIUM',
               dueDate: dueDate,
               gardenId: newGarden.id,
-              organizationId: organizationId
+              organizationId: Number(organizationId)
             };
           });
 
@@ -78,9 +91,12 @@ export const createGarden = async (req: Request, res: Response) => {
     });
 
     res.status(201).json(result);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erro ao criar canteiro e tarefas:", error);
-    res.status(500).json({ error: "Erro ao processar o plantio e agendar tarefas." });
+    res.status(500).json({ 
+      error: "Erro ao processar o plantio e agendar tarefas.",
+      details: error.message 
+    });
   }
 };
 
