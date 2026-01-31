@@ -14,6 +14,7 @@ import cropPlanRoutes from './cropPlan.routes.js';
 import supplyUsageRoutes from './supplyUsage.routes.js';
 import harvestRoutes from './harvest.routes.js'; 
 import cropCycleRoutes from './cropCycle.routes.js';
+import journalRoutes from './journal.routes.js';
 
 const router = Router();
 
@@ -30,5 +31,6 @@ router.use('/crop-plans', cropPlanRoutes);
 router.use('/usage', supplyUsageRoutes);
 router.use('/harvest', harvestRoutes);
 router.use('/crop-cycles', cropCycleRoutes); 
+router.use('/journals', journalRoutes); 
 
 export default router;
