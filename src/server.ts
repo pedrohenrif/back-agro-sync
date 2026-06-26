@@ -1,22 +1,25 @@
-// ARQUIVO: src/server.ts
-import "./instrument.js"; 
+import "express-async-errors"; 
+import "./instrument"; 
 import * as Sentry from "@sentry/node";
 
 import express from "express";
 import cors from "cors";
-import router from "./routes/index.js";
+
+import routes from "./main/routes.js"; 
+import { errorMiddleware } from "./@shared/infra/http/middlewares/error.middleware.js";
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-app.use("/api", router);
+app.use("/api", routes);
 
-Sentry.setupExpressErrorHandler(app as any);
+Sentry.setupExpressErrorHandler(app);
+app.use(errorMiddleware);
 
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+  console.log(`AgroSync API porta ${PORT}`);
 });

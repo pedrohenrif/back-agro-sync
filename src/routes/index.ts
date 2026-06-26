@@ -1,7 +1,7 @@
 // ARQUIVO: src/routes/index.ts
 
 import { Router } from "express";
-import { authMiddleware } from "../middleware/auth.middleware.js";
+import { authMiddleware } from "../@shared/infra/http/middlewares/auth.middleware.js";
 
 import authRoutes from "./auth.routes.js";
 import aiRoutes from "./ai.routes.js";

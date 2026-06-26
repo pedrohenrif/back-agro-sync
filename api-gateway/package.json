@@ -1,0 +1,25 @@
+{
+  "name": "agrosync-api-gateway",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "API Gateway â€” roteamento central para todos os microserviÃ§os AgroSync",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc || true",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "http-proxy-middleware": "^3.0.3"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.1",
+    "@types/http-proxy-middleware": "^0.19.3",
+    "@types/node": "^22.13.5",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  }
+}

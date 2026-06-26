@@ -1,0 +1,171 @@
+services:
+  # ─── Infraestrutura ──────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: agrosync-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: agrosync
+      POSTGRES_PASSWORD: agrosync_secret
+      POSTGRES_DB: agrosync_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U agrosync -d agrosync_db']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: agrosync-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: agrosync
+      RABBITMQ_DEFAULT_PASS: rabbit_secret
+    ports:
+      - '5672:5672'
+      - '15672:15672'   # Management UI → http://localhost:15672
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', 'check_port_connectivity']
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  # ─── API Gateway ──────────────────────────────────────────────
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: agrosync-gateway
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      PORT: 3000
+      AUTH_SERVICE_URL: http://auth-service:3001
+      GARDEN_SERVICE_URL: http://garden-service:3002
+      SUPPLY_SERVICE_URL: http://supply-service:3003
+      TASK_SERVICE_URL: http://task-service:3004
+      AI_SERVICE_URL: http://ai-service:3005
+    depends_on:
+      - auth-service
+      - garden-service
+      - supply-service
+      - task-service
+      - ai-service
+
+  # ─── Microserviços ────────────────────────────────────────────
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: agrosync-auth
+    restart: unless-stopped
+    ports:
+      - '3001:3001'
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgresql://agrosync:agrosync_secret@postgres:5432/agrosync_db
+      JWT_SECRET: ${JWT_SECRET:-agrosync_jwt_super_secreto_troque_em_prod}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  garden-service:
+    build:
+      context: ./services/garden-service
+      dockerfile: Dockerfile
+    container_name: agrosync-garden
+    restart: unless-stopped
+    ports:
+      - '3002:3002'
+    environment:
+      PORT: 3002
+      DATABASE_URL: postgresql://agrosync:agrosync_secret@postgres:5432/agrosync_db
+      JWT_SECRET: ${JWT_SECRET:-agrosync_jwt_super_secreto_troque_em_prod}
+      RABBITMQ_URL: amqp://agrosync:rabbit_secret@rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  supply-service:
+    build:
+      context: ./services/supply-service
+      dockerfile: Dockerfile
+    container_name: agrosync-supply
+    restart: unless-stopped
+    ports:
+      - '3003:3003'
+    environment:
+      PORT: 3003
+      DATABASE_URL: postgresql://agrosync:agrosync_secret@postgres:5432/agrosync_db
+      JWT_SECRET: ${JWT_SECRET:-agrosync_jwt_super_secreto_troque_em_prod}
+      RABBITMQ_URL: amqp://agrosync:rabbit_secret@rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  task-service:
+    build:
+      context: ./services/task-service
+      dockerfile: Dockerfile
+    container_name: agrosync-task
+    restart: unless-stopped
+    ports:
+      - '3004:3004'
+    environment:
+      PORT: 3004
+      DATABASE_URL: postgresql://agrosync:agrosync_secret@postgres:5432/agrosync_db
+      JWT_SECRET: ${JWT_SECRET:-agrosync_jwt_super_secreto_troque_em_prod}
+      RABBITMQ_URL: amqp://agrosync:rabbit_secret@rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  ai-service:
+    build:
+      context: ./services/ai-service
+      dockerfile: Dockerfile
+    container_name: agrosync-ai
+    restart: unless-stopped
+    ports:
+      - '3005:3005'
+    environment:
+      PORT: 3005
+      DATABASE_URL: postgresql://agrosync:agrosync_secret@postgres:5432/agrosync_db
+      JWT_SECRET: ${JWT_SECRET:-agrosync_jwt_super_secreto_troque_em_prod}
+      RABBITMQ_URL: amqp://agrosync:rabbit_secret@rabbitmq:5672
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    container_name: agrosync-notification
+    restart: unless-stopped
+    environment:
+      RABBITMQ_URL: amqp://agrosync:rabbit_secret@rabbitmq:5672
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  rabbitmq_data:

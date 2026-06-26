@@ -1,4 +1,4 @@
-import { prisma } from "../../prisma/config/prisma.js";
+import { prisma } from "../core/database/prisma.js";
 import bcrypt from "bcryptjs";
 import { Role } from "@prisma/client"; 
 

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { login, register, getMe } from "../controllers/auth.controller.js";
-import { authMiddleware } from '../middleware/auth.middleware.js';
+import { authMiddleware } from '../@shared/infra/http/middlewares/auth.middleware.js';
 import dotenv from "dotenv";
 
 dotenv.config();

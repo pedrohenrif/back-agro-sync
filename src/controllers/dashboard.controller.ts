@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { prisma } from "../../prisma/config/prisma.js";
+import { prisma } from "../core/database/prisma.js";
 
 export const getDashboardStats = async (req: Request, res: Response) => {
   const organizationId = req.user?.organizationId;

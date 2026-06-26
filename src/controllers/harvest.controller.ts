@@ -1,6 +1,6 @@
 // src/controllers/harvest.controller.ts
 import { Request, Response } from 'express';
-import { prisma } from "../../prisma/config/prisma.js";
+import { prisma } from "../core/database/prisma.js";
 
 export const recordHarvest = async (req: Request, res: Response) => {
   const { gardenId, yieldKg, harvestDate, notes, isFinalHarvest } = req.body;

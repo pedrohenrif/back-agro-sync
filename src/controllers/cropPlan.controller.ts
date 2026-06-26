@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { prisma } from "../../prisma/config/prisma.js";
+import { prisma } from "../core/database/prisma.js";
 
 // --- LISTAR TODOS OS PLANOS ---
 export const getCropPlans = async (req: Request, res: Response) => {

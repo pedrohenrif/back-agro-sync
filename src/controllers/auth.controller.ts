@@ -2,8 +2,8 @@
 
 import { Request, Response } from "express";
 import { registerUserService, loginUserService } from "../services/auth.service.js";
-import { generateToken } from "../utils/jwt.js";
-import { prisma } from "../../prisma/config/prisma.js";
+import { generateToken } from "../@shared/utils/jwt.js";
+import { prisma } from "../core/database/prisma.js";
 
 
 export const register = async (req: Request, res: Response) => {
