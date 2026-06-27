@@ -53,12 +53,14 @@ services:
       SUPPLY_SERVICE_URL: http://supply-service:3003
       TASK_SERVICE_URL: http://task-service:3004
       AI_SERVICE_URL: http://ai-service:3005
+      FINANCE_SERVICE_URL: http://finance-service:3006
     depends_on:
       - auth-service
       - garden-service
       - supply-service
       - task-service
       - ai-service
+      - finance-service
 
   # ─── Microserviços ────────────────────────────────────────────
   auth-service:
@@ -152,6 +154,22 @@ services:
       postgres:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+
+  finance-service:
+    build:
+      context: ./services/finance-service
+      dockerfile: Dockerfile
+    container_name: agrosync-finance
+    restart: unless-stopped
+    ports:
+      - '3006:3006'
+    environment:
+      PORT: 3006
+      DATABASE_URL: postgresql://agrosync:agrosync_secret@postgres:5432/agrosync_db
+      JWT_SECRET: ${JWT_SECRET:-agrosync_jwt_super_secreto_troque_em_prod}
+    depends_on:
+      postgres:
         condition: service_healthy
 
   notification-service:

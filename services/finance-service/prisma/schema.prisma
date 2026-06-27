@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Apenas os modelos que o finance-service possui.
+// Referências a tabelas de outros serviços ficam como Int simples — sem @relation.
+
+enum ExpenseType {
+  LABOR
+  EQUIPMENT
+  INPUT
+  INFRASTRUCTURE
+  OTHER
+}
+
+model ExpenseCategory {
+  id             Int       @id @default(autoincrement())
+  organizationId Int
+  name           String
+  color          String    @default("#64748b")
+  expenses       Expense[]
+  createdAt      DateTime  @default(now())
+
+  @@index([organizationId])
+}
+
+model Expense {
+  id             Int             @id @default(autoincrement())
+  organizationId Int
+  gardenId       Int?
+  categoryId     Int
+  category       ExpenseCategory @relation(fields: [categoryId], references: [id])
+  description    String
+  amount         Float
+  date           DateTime
+  type           ExpenseType     @default(OTHER)
+  notes          String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([organizationId, date])
+  @@index([organizationId, gardenId])
+  @@index([categoryId])
+}
+
+model HarvestSale {
+  id             Int      @id @default(autoincrement())
+  organizationId Int
+  gardenId       Int
+  quantityKg     Float
+  pricePerKg     Float
+  totalAmount    Float
+  buyer          String?
+  saleDate       DateTime
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId, saleDate])
+  @@index([gardenId])
+}

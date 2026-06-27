@@ -12,6 +12,7 @@ const GARDEN  = process.env.GARDEN_SERVICE_URL  || 'http://garden-service:3002';
 const SUPPLY  = process.env.SUPPLY_SERVICE_URL  || 'http://supply-service:3003';
 const TASK    = process.env.TASK_SERVICE_URL    || 'http://task-service:3004';
 const AI      = process.env.AI_SERVICE_URL      || 'http://ai-service:3005';
+const FINANCE = process.env.FINANCE_SERVICE_URL || 'http://finance-service:3006';
 
 const proxy = (target: string) =>
   createProxyMiddleware({
@@ -42,6 +43,7 @@ app.use('/api/supplies',    proxy(SUPPLY));
 app.use('/api/usage',       proxy(SUPPLY));
 app.use('/api/tasks',       proxy(TASK));
 app.use('/api/ai',          proxy(AI));
+app.use('/api/finance',     proxy(FINANCE));
 
 // ── Fallback ──────────────────────────────────────────────────
 app.use((_req, res) => res.status(404).json({ error: 'Rota não encontrada.' }));

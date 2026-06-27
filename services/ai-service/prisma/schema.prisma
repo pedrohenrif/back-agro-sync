@@ -7,43 +7,67 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Organization {
-  id               Int              @id @default(autoincrement())
-  name             String
-  members          Membership[]
-  gardens          Garden[]
-  supplies         Supply[]
-  tasks            Task[]
-  cropPlans        CropPlan[]
-  supplyCategories SupplyCategory[]
-  supplyUnits      SupplyUnit[]
-  supplyUsages     SupplyUsage[]
-
-  supplyTransactions SupplyTransaction[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model User {
-  id             Int            @id @default(autoincrement())
-  name           String
-  email          String         @unique
-  password       String
-  memberships    Membership[]
-  tasks          Task[]
-  aiMessages     AIMessage[]
-  journalEntries JournalEntry[]
-
-  supplyTransactions SupplyTransaction[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
+// ─── Enums ───────────────────────────────────────────────────────────────────
 
 enum Role {
   ADMIN
   MEMBER
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum CropCycleStatus {
+  ACTIVE
+  COMPLETED
+  PAUSED
+  CANCELLED
+}
+
+enum TransactionType {
+  ENTRY
+  EXIT
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model Organization {
+  id                 Int                  @id @default(autoincrement())
+  name               String
+  members            Membership[]
+  gardens            Garden[]
+  supplies           Supply[]
+  tasks              Task[]
+  cropPlans          CropPlan[]
+  supplyCategories   SupplyCategory[]
+  supplyUnits        SupplyUnit[]
+  supplyUsages       SupplyUsage[]
+  supplyTransactions SupplyTransaction[]
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+}
+
+model User {
+  id                 Int                  @id @default(autoincrement())
+  name               String
+  email              String               @unique
+  password           String
+  memberships        Membership[]
+  tasks              Task[]
+  aiMessages         AIMessage[]
+  journalEntries     JournalEntry[]
+  supplyTransactions SupplyTransaction[]
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
 }
 
 model Membership {
@@ -56,35 +80,35 @@ model Membership {
   createdAt      DateTime     @default(now())
 
   @@unique([userId, organizationId])
+  @@index([organizationId])
 }
 
 model Garden {
-  id           Int      @id @default(autoincrement())
-  name         String
-  lotCode      String   @unique
-  crop         String
-  plantingDate DateTime?
-  sizeInM2     Float
-  isActive     Boolean  @default(true)
-
-  location String?
-  geometry Json?
-  mapColor String? @default("#2e7d32")
-
+  id             Int           @id @default(autoincrement())
+  name           String
+  lotCode        String        @unique
+  crop           String
+  plantingDate   DateTime?
+  sizeInM2       Float
+  isActive       Boolean       @default(true)
+  location       String?
+  geometry       Json?
+  mapColor       String?       @default("#2e7d32")
   cropPlanId     Int?
-  cropPlan       CropPlan?    @relation(fields: [cropPlanId], references: [id])
+  cropPlan       CropPlan?     @relation(fields: [cropPlanId], references: [id])
   organizationId Int
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   journalEntries JournalEntry[]
   harvests       Harvest[]
   tasks          Task[]
   supplyUsages   SupplyUsage[]
+  cropCycles     CropCycle[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
-  cropCycles CropCycle[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  @@index([organizationId])
+  @@index([organizationId, isActive])
+  @@index([cropPlanId])
 }
 
 model JournalEntry {
@@ -94,13 +118,14 @@ model JournalEntry {
   description String
   date        DateTime
   imageUrl    String?
+  gardenId    Int
+  garden      Garden   @relation(fields: [gardenId], references: [id], onDelete: Cascade)
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
 
-  gardenId Int
-  garden   Garden @relation(fields: [gardenId], references: [id], onDelete: Cascade)
-  userId   Int
-  user     User   @relation(fields: [userId], references: [id])
-
-  createdAt DateTime @default(now())
+  @@index([gardenId, date])
+  @@index([userId])
 }
 
 model Harvest {
@@ -108,80 +133,83 @@ model Harvest {
   harvestDate DateTime
   yieldKg     Float
   notes       String?
+  gardenId    Int
+  garden      Garden   @relation(fields: [gardenId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
 
-  gardenId Int
-  garden   Garden @relation(fields: [gardenId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
+  @@index([gardenId, harvestDate])
 }
 
 model Task {
-  id          Int       @id @default(autoincrement())
-  title       String
-  description String?
-  priority    String
-  status      String    @default("PENDING")
-  dueDate     DateTime?
-
-  gardenId Int?
-  garden   Garden? @relation(fields: [gardenId], references: [id], onDelete: Cascade)
-
+  id             Int          @id @default(autoincrement())
+  title          String
+  description    String?
+  priority       TaskPriority @default(MEDIUM)
+  status         TaskStatus   @default(PENDING)
+  dueDate        DateTime?
+  gardenId       Int?
+  garden         Garden?      @relation(fields: [gardenId], references: [id], onDelete: Cascade)
   organizationId Int
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assignedToId   Int?
+  assignedTo     User?        @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
-  assignedToId Int?
-  assignedTo   User? @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([organizationId, dueDate])
+  @@index([gardenId])
+  @@index([assignedToId])
 }
 
 model Supply {
-  id            Int     @id @default(autoincrement())
-  name          String
-  brand         String?
-  supplierLot   String?
-  invoiceNumber String?
-  quantity      Float
-  minStock      Float   @default(0)
-  isActive      Boolean @default(true)
-
+  id             Int              @id @default(autoincrement())
+  name           String
+  brand          String?
+  supplierLot    String?
+  invoiceNumber  String?
+  quantity       Float
+  minStock       Float            @default(0)
+  isActive       Boolean          @default(true)
   unitPrice      Float?
-  withdrawalDays Int?   @default(0)
-
+  withdrawalDays Int?             @default(0)
   organizationId Int
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  transactions   SupplyTransaction[]
+  categoryId     Int
+  category       SupplyCategory   @relation(fields: [categoryId], references: [id])
+  unitId         Int
+  unit           SupplyUnit       @relation(fields: [unitId], references: [id])
+  planSupplies   PlanSupply[]
+  usages         SupplyUsage[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
-  transactions SupplyTransaction[]
-
-  categoryId Int
-  category   SupplyCategory @relation(fields: [categoryId], references: [id])
-  unitId     Int
-  unit       SupplyUnit     @relation(fields: [unitId], references: [id])
-
-  planSupplies PlanSupply[]
-
-  usages    SupplyUsage[]
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  @@index([organizationId])
+  @@index([organizationId, isActive])
+  @@index([categoryId])
+  @@index([unitId])
 }
 
 model SupplyUsage {
-  id           Int      @id @default(autoincrement())
-  quantityUsed Float
-  usedAt       DateTime @default(now())
-  notes        String?
-
+  id             Int          @id @default(autoincrement())
+  quantityUsed   Float
+  usedAt         DateTime     @default(now())
+  notes          String?
   organizationId Int
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  gardenId       Int
+  garden         Garden       @relation(fields: [gardenId], references: [id], onDelete: Cascade)
+  supplyId       Int
+  supply         Supply       @relation(fields: [supplyId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
 
-  gardenId Int
-  garden   Garden @relation(fields: [gardenId], references: [id], onDelete: Cascade)
-
-  supplyId Int
-  supply   Supply @relation(fields: [supplyId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
+  @@index([organizationId])
+  @@index([organizationId, gardenId])
+  @@index([gardenId])
+  @@index([supplyId])
+  @@index([usedAt])
 }
 
 model SupplyUnit {
@@ -193,6 +221,8 @@ model SupplyUnit {
   supplies       Supply[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+
+  @@index([organizationId])
 }
 
 model SupplyCategory {
@@ -204,37 +234,34 @@ model SupplyCategory {
   supplies       Supply[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+
+  @@index([organizationId])
 }
 
 model CropPlan {
-  id           Int     @id @default(autoincrement())
-  name         String
-  culture      String
-  durationDays Int
-  description  String?
-
-  bestMonths Int[]
-
-  spacingX        Float?
-  spacingY        Float?
-  germinationRate Float? @default(0.95)
-  safetyMargin    Float? @default(0.10)
-
+  id                    Int          @id @default(autoincrement())
+  name                  String
+  culture               String
+  durationDays          Int
+  description           String?
+  bestMonths            Int[]
+  spacingX              Float?
+  spacingY              Float?
+  germinationRate       Float?       @default(0.95)
+  safetyMargin          Float?       @default(0.10)
   expectedWeightPerUnit Float?
-  commercialEfficiency  Float? @default(0.85)
+  commercialEfficiency  Float?       @default(0.85)
   targetMarketPrice     Float?
+  cropCycles            CropCycle[]
+  organizationId        Int
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  gardens               Garden[]
+  planSupplies          PlanSupply[]
+  planTasks             PlanTask[]
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
 
-  cropCycles CropCycle[]
-
-  organizationId Int
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  gardens      Garden[]
-  planSupplies PlanSupply[]
-  planTasks    PlanTask[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  @@index([organizationId])
 }
 
 model PlanSupply {
@@ -244,15 +271,14 @@ model PlanSupply {
   unit       String
   cropPlanId Int
   cropPlan   CropPlan @relation(fields: [cropPlanId], references: [id], onDelete: Cascade)
-
-  supplyId Int?
-  supply   Supply? @relation(fields: [supplyId], references: [id])
+  supplyId   Int?
+  supply     Supply?  @relation(fields: [supplyId], references: [id])
 }
 
 model PlanTask {
   id           Int      @id @default(autoincrement())
-  title        String // Ex: "Primeira Adubação de Cobertura"
-  dayToExecute Int // Ex: Dia 15 após o plantio
+  title        String
+  dayToExecute Int
   instructions String?
   cropPlanId   Int
   cropPlan     CropPlan @relation(fields: [cropPlanId], references: [id], onDelete: Cascade)
@@ -265,46 +291,44 @@ model AIMessage {
   createdAt DateTime @default(now())
   userId    Int
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
 
-enum TransactionType {
-  ENTRY
-  EXIT
+  @@index([userId, createdAt])
 }
 
 model SupplyTransaction {
-  id       Int    @id @default(autoincrement())
-  supplyId Int
-  supply   Supply @relation(fields: [supplyId], references: [id], onDelete: Cascade)
-
-  type     TransactionType
-  quantity Float
-  reason   String?
-
-  createdAt DateTime @default(now())
-
+  id             Int             @id @default(autoincrement())
+  supplyId       Int
+  supply         Supply          @relation(fields: [supplyId], references: [id], onDelete: Cascade)
+  type           TransactionType
+  quantity       Float
+  reason         String?
+  createdAt      DateTime        @default(now())
   organizationId Int
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         Int
+  user           User            @relation(fields: [userId], references: [id])
 
-  userId Int
-  user   User @relation(fields: [userId], references: [id])
+  @@index([supplyId, createdAt])
+  @@index([organizationId])
+  @@index([userId])
 }
 
 model CropCycle {
-  id                  Int      @id @default(autoincrement())
+  id                  Int             @id @default(autoincrement())
   gardenId            Int
   cropPlanId          Int
-  startDate           DateTime @default(now())
+  startDate           DateTime        @default(now())
   expectedHarvestDate DateTime
-  status              String   @default("ACTIVE")
+  status              CropCycleStatus @default(ACTIVE)
+  garden              Garden          @relation(fields: [gardenId], references: [id])
+  cropPlan            CropPlan        @relation(fields: [cropPlanId], references: [id])
+  tasks               GardenTask[]
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
 
-  garden   Garden   @relation(fields: [gardenId], references: [id])
-  cropPlan CropPlan @relation(fields: [cropPlanId], references: [id])
-
-  tasks GardenTask[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  @@index([gardenId])
+  @@index([cropPlanId])
+  @@index([status])
 }
 
 model GardenTask {
@@ -314,6 +338,8 @@ model GardenTask {
   dueDate     DateTime
   isCompleted Boolean   @default(false)
   completedAt DateTime?
+  cropCycle   CropCycle @relation(fields: [cropCycleId], references: [id], onDelete: Cascade)
 
-  cropCycle CropCycle @relation(fields: [cropCycleId], references: [id], onDelete: Cascade)
+  @@index([cropCycleId])
+  @@index([dueDate, isCompleted])
 }
